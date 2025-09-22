@@ -1,1 +1,365 @@
-/* You can add global styles to this file, and also import other style files */
+/* =====================================================
+   CHECKBOXES - TAMANHO RESPONSIVO
+   ===================================================== */
+
+/* CHECKBOX E RADIO - BASE (Desktop) */
+input[type="checkbox"],
+input[type="radio"] {
+    /* TAMANHO NORMAL PARA DESKTOP */
+    width: 16px !important;
+    height: 16px !important;
+    margin: 0 0.5rem 0 0 !important;
+
+    /* ACENT COLOR PARA MODERNOS */
+    accent-color: #3b82f6 !important;
+
+    /* CURSOR */
+    cursor: pointer !important;
+}
+
+/* CHECKBOX NO HEADER DA TABELA */
+.table th input[type="checkbox"] {
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+}
+
+/* CHECKBOX NAS LINHAS DA TABELA */
+.table td input[type="checkbox"] {
+    width: 16px !important;
+    height: 16px !important;
+    margin: 0 0.5rem 0 0 !important;
+}
+
+/* =====================================================
+   MOBILE - CHECKBOX MAIORES PARA TOUCH
+   ===================================================== */
+
+@media (max-width: 768px) {
+
+    /* CHECKBOX MAIORES NO MOBILE */
+    input[type="checkbox"],
+    input[type="radio"] {
+        width: 20px !important;
+        height: 20px !important;
+        margin: 0 0.75rem 0 0 !important;
+    }
+
+    /* CHECKBOX NO HEADER - AINDA MAIOR */
+    .table th input[type="checkbox"] {
+        width: 22px !important;
+        height: 22px !important;
+        margin: 0 !important;
+    }
+
+    /* CHECKBOX NAS LINHAS */
+    .table td input[type="checkbox"] {
+        width: 20px !important;
+        height: 20px !important;
+        margin: 0 0.75rem 0 0 !important;
+    }
+}
+
+/* =====================================================
+   FORM-CHECK - AJUSTES GLOBAIS
+   ===================================================== */
+
+.form-check {
+    padding-left: 1.75rem !important;
+    margin-bottom: 0.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.form-check-input {
+    /* REMOVER ESTILIZAÇÃO BOOTSTRAP QUE PODE AUMENTAR */
+    flex-shrink: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    margin-top: 0.125em !important;
+    margin-left: 0 !important;
+}
+
+/* FORM-CHECK NO HEADER DA TABELA */
+.table th .form-check {
+    padding-left: 0 !important;
+    justify-content: center !important;
+    margin: 0 !important;
+}
+
+.table th .form-check-input {
+    margin: 0 !important;
+}
+
+/* FORM-CHECK NAS CELULAS */
+.table td .form-check {
+    padding-left: 0 !important;
+    justify-content: flex-start !important;
+    margin: 0 !important;
+}
+
+/* LABELS DE CHECKBOX */
+.form-check-label {
+    cursor: pointer !important;
+    margin-left: 0.25rem !important;
+    font-weight: 500 !important;
+    line-height: 1.4 !important;
+}
+
+/* CHECKBOX FOCADO */
+.form-check-input:focus {
+    border-color: #93c5fd !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    outline: none !important;
+}
+
+/* CHECKBOX CHECKED */
+.form-check-input:checked {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+}
+
+/* =====================================================
+   OTIMIZAÇÕES DE PERFORMANCE PARA CHECKBOX
+   ===================================================== */
+
+input[type="checkbox"],
+input[type="radio"] {
+    /* PREVENIR LAG DE RENDERIZAÇÃO */
+    will-change: auto !important;
+    contain: layout style !important;
+
+    /* TRANSITION SUAVE */
+    transition: background-color 0.15s ease, border-color 0.15s ease !important;
+}
+
+/* =====================================================
+   ESTILOS GLOBAIS ANTERIORES - PRESERVADOS
+   ===================================================== */
+
+/* Seus estilos de bordas coloridas minimalistas */
+.form-control,
+.form-select {
+    border: 1px solid #93c5fd !important;
+    border-radius: 6px !important;
+}
+
+.form-control:hover,
+.form-select:hover {
+    border-color: #60a5fa !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Status sem bordas */
+.status-input-group .input-group,
+.status-list-group .list-group {
+    border: none !important;
+}
+
+/* Tabela responsiva */
+.table-responsive {
+    border-radius: 8px !important;
+    margin-bottom: 1rem !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+/* Mobile otimizações */
+@media (max-width: 768px) {
+    .btn-group {
+        flex-direction: row !important;
+        gap: 0.25rem !important;
+    }
+
+    .btn-group .btn {
+        padding: 0.375rem !important;
+        min-width: 36px !important;
+    }
+}
+
+/* =====================================================
+   CHECKBOXES - TAMANHO RESPONSIVO
+   ===================================================== */
+
+/* CHECKBOX E RADIO - BASE (Desktop) */
+input[type="checkbox"],
+input[type="radio"] {
+    /* TAMANHO NORMAL PARA DESKTOP */
+    width: 16px !important;
+    height: 16px !important;
+    margin: 0 0.5rem 0 0 !important;
+
+    /* ACENT COLOR PARA MODERNOS */
+    accent-color: #3b82f6 !important;
+
+    /* CURSOR */
+    cursor: pointer !important;
+}
+
+/* CHECKBOX NO HEADER DA TABELA */
+.table th input[type="checkbox"] {
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+}
+
+/* CHECKBOX NAS LINHAS DA TABELA */
+.table td input[type="checkbox"] {
+    width: 16px !important;
+    height: 16px !important;
+    margin: 0 0.5rem 0 0 !important;
+}
+
+/* =====================================================
+   MOBILE - CHECKBOX MAIORES PARA TOUCH
+   ===================================================== */
+
+@media (max-width: 768px) {
+
+    /* CHECKBOX MAIORES NO MOBILE */
+    input[type="checkbox"],
+    input[type="radio"] {
+        width: 20px !important;
+        height: 20px !important;
+        margin: 0 0.75rem 0 0 !important;
+    }
+
+    /* CHECKBOX NO HEADER - AINDA MAIOR */
+    .table th input[type="checkbox"] {
+        width: 22px !important;
+        height: 22px !important;
+        margin: 0 !important;
+    }
+
+    /* CHECKBOX NAS LINHAS */
+    .table td input[type="checkbox"] {
+        width: 20px !important;
+        height: 20px !important;
+        margin: 0 0.75rem 0 0 !important;
+    }
+}
+
+/* =====================================================
+   FORM-CHECK - AJUSTES GLOBAIS
+   ===================================================== */
+
+.form-check {
+    padding-left: 1.75rem !important;
+    margin-bottom: 0.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.form-check-input {
+    /* REMOVER ESTILIZAÇÃO BOOTSTRAP QUE PODE AUMENTAR */
+    flex-shrink: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    margin-top: 0.125em !important;
+    margin-left: 0 !important;
+}
+
+/* FORM-CHECK NO HEADER DA TABELA */
+.table th .form-check {
+    padding-left: 0 !important;
+    justify-content: center !important;
+    margin: 0 !important;
+}
+
+.table th .form-check-input {
+    margin: 0 !important;
+}
+
+/* FORM-CHECK NAS CELULAS */
+.table td .form-check {
+    padding-left: 0 !important;
+    justify-content: flex-start !important;
+    margin: 0 !important;
+}
+
+/* LABELS DE CHECKBOX */
+.form-check-label {
+    cursor: pointer !important;
+    margin-left: 0.25rem !important;
+    font-weight: 500 !important;
+    line-height: 1.4 !important;
+}
+
+/* CHECKBOX FOCADO */
+.form-check-input:focus {
+    border-color: #93c5fd !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    outline: none !important;
+}
+
+/* CHECKBOX CHECKED */
+.form-check-input:checked {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+}
+
+/* =====================================================
+   OTIMIZAÇÕES DE PERFORMANCE PARA CHECKBOX
+   ===================================================== */
+
+input[type="checkbox"],
+input[type="radio"] {
+    /* PREVENIR LAG DE RENDERIZAÇÃO */
+    will-change: auto !important;
+    contain: layout style !important;
+
+    /* TRANSITION SUAVE */
+    transition: background-color 0.15s ease, border-color 0.15s ease !important;
+}
+
+/* =====================================================
+   ESTILOS GLOBAIS ANTERIORES - PRESERVADOS
+   ===================================================== */
+
+/* Seus estilos de bordas coloridas minimalistas */
+.form-control,
+.form-select {
+    border: 1px solid #93c5fd !important;
+    border-radius: 6px !important;
+}
+
+.form-control:hover,
+.form-select:hover {
+    border-color: #60a5fa !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Status sem bordas */
+.status-input-group .input-group,
+.status-list-group .list-group {
+    border: none !important;
+}
+
+/* Tabela responsiva */
+.table-responsive {
+    border-radius: 8px !important;
+    margin-bottom: 1rem !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+/* Mobile otimizações */
+@media (max-width: 768px) {
+    .btn-group {
+        flex-direction: row !important;
+        gap: 0.25rem !important;
+    }
+
+    .btn-group .btn {
+        padding: 0.375rem !important;
+        min-width: 36px !important;
+    }
+}

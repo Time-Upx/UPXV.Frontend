@@ -1,0 +1,163 @@
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header">
+            @if (isEdit) {
+            <h4>Editar Produto @if (carregando) { <span class="spinner-border spinner-border-sm ms-2"
+                    role="status"></span> }</h4>
+            } @else {
+            <h4>Criar Novo Produto</h4>
+            }
+        </div>
+        <div class="card-body">
+            @if (carregando) {
+            <div class="alert alert-info" role="alert">
+                Carregando dados do produto...
+            </div>
+            }
+            @if (mensagemErro && !carregando) {
+            <div class="alert alert-danger" role="alert">
+                {{ mensagemErro }}
+            </div>
+            }
+            @if (mensagemSucesso) {
+            <div class="alert alert-success" role="alert">
+                {{ mensagemSucesso }}
+            </div>
+            }
+            @if (!carregando) {
+            <form [formGroup]="produtoForm" (ngSubmit)="salvar()" class="debug-cursor-fix">
+                <div class="mb-3">
+                    <label for="nome" class="form-label">Nome</label>
+                    <input type="text" class="form-control" id="nome" formControlName="nome"
+                        [class.is-invalid]="formSubmitted && produtoForm.get('nome')?.invalid">
+                    @if (formSubmitted && produtoForm.get('nome')?.hasError('required')) {
+                    <div class="invalid-feedback">Nome é obrigatório.</div>
+                    }
+                </div>
+
+                <div class="mb-3">
+                    <label for="categoria" class="form-label">Categoria</label>
+                    <select class="form-select" id="categoria" formControlName="categoria"
+                        (change)="onCategoriaChange()">
+                        <option value="consumivel">Consumível</option>
+                        <option value="patrimonio">Patrimônio</option>
+                    </select>
+                </div>
+
+                <!-- TAGS - Permanece igual -->
+                <div class="mb-3">
+                    <label class="form-label">Tags</label>
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control" placeholder="Nova tag" [(ngModel)]="novaTag"
+                            [ngModelOptions]="{standalone: true}">
+                        <button class="btn btn-outline-secondary" type="button" (click)="adicionarTag()"
+                            [disabled]="!novaTag.trim()">
+                            <i class="bi bi-plus"></i> Adicionar
+                        </button>
+                    </div>
+                    @if (produtoForm.get('tags')?.value?.length === 0) {
+                    <div class="text-muted small">Nenhuma tag adicionada.</div>
+                    }
+                    <ul class="list-group list-group-sm">
+                        @for (tag of produtoForm.get('tags')?.value; track $index) {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="badge bg-primary">{{ tag }}</span>
+                            <button class="btn btn-sm btn-outline-danger" type="button" (click)="removerTag($index)">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </li>
+                        }
+                    </ul>
+                </div>
+
+                <!-- QUANTIDADE - Consumível -->
+                @if (produtoForm.get('categoria')?.value === 'consumivel') {
+                <div class="mb-3">
+                    <label for="quantidade" class="form-label">Quantidade</label>
+                    <input type="number" class="form-control" id="quantidade" formControlName="quantidade" min="0"
+                        [class.is-invalid]="formSubmitted && produtoForm.get('quantidade')?.invalid">
+                    @if (formSubmitted && produtoForm.get('quantidade')?.hasError('required')) {
+                    <div class="invalid-feedback">Quantidade é obrigatória para consumíveis.</div>
+                    }
+                    @if (formSubmitted && produtoForm.get('quantidade')?.hasError('min')) {
+                    <div class="invalid-feedback">Quantidade deve ser maior ou igual a 0.</div>
+                    }
+                </div>
+                }
+
+                <!-- STATUS - Patrimônio (AGORA COM ARRAY) -->
+                @if (produtoForm.get('categoria')?.value === 'patrimonio') {
+                <div class="mb-3">
+                    <label class="form-label">Status</label>
+
+                    <!-- Input para adicionar novo status -->
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="Novo status (ex: Em Manutenção)"
+                            [(ngModel)]="novoStatus" [ngModelOptions]="{standalone: true}">
+                        <button class="btn btn-outline-secondary" type="button" (click)="adicionarStatus()"
+                            [disabled]="!novoStatus.trim()">
+                            <i class="bi bi-plus"></i> Adicionar
+                        </button>
+                    </div>
+
+                    <!-- Lista de status disponíveis -->
+                    @if (statusList.length === 0) {
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Adicione pelo menos um status para este patrimônio.
+                    </div>
+                    } @else {
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">Status Disponíveis</label>
+                        <ul class="list-group list-group-sm">
+                            @for (status of statusList; track $index) {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div class="form-check">
+                                    <input class="form-check-input status-radio" type="radio" [id]="'status-' + $index"
+                                        [value]="status" formControlName="status_ativo"
+                                        (change)="onStatusChange(status)">
+                                    <label class="form-check-label" [for]="'status-' + $index">
+                                        <span class="badge bg-info me-1">{{ status }}</span>
+                                    </label>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger ms-2" type="button"
+                                    (click)="removerStatus($index)" [disabled]="statusList.length === 1">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </li>
+                            }
+                        </ul>
+                    </div>
+                    }
+
+                    @if (formSubmitted && produtoForm.get('status_ativo')?.hasError('required')) {
+                    <div class="text-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Selecione um status ativo.
+                    </div>
+                    }
+                </div>
+                }
+
+                <!-- DESCRIÇÃO -->
+                <div class="mb-3">
+                    <label for="descricao" class="form-label">Descrição</label>
+                    <textarea class="form-control" id="descricao" rows="3" formControlName="descricao"
+                        placeholder="Descrição detalhada do produto..."></textarea>
+                </div>
+
+                <!-- BOTÕES -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success flex-fill"
+                        [disabled]="produtoForm.invalid && !formSubmitted">
+                        <i class="bi bi-save"></i>
+                        {{ isEdit ? 'Atualizar Produto' : 'Criar Produto' }}
+                    </button>
+                    <button type="button" class="btn btn-secondary" (click)="router.navigate(['/produtos'])">
+                        <i class="bi bi-arrow-left"></i> Cancelar
+                    </button>
+                </div>
+            </form>
+            }
+        </div>
+    </div>
+</div>

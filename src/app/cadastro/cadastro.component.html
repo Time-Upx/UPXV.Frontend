@@ -1,0 +1,67 @@
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header">
+            <h4>Cadastro de Usuário</h4>
+        </div>
+        <div class="card-body">
+            @if (formSubmitted && cadastroForm.invalid) {
+            <div class="alert alert-danger" role="alert">
+                Por favor, preencha todos os campos corretamente.
+            </div>
+            }
+            @if (mensagemErro) {
+            <div class="alert alert-danger" role="alert">
+                {{ mensagemErro }}
+            </div>
+            }
+            @if (mensagemSucesso) {
+            <div class="alert alert-success" role="alert">
+                {{ mensagemSucesso }}
+            </div>
+            }
+            <form [formGroup]="cadastroForm" (ngSubmit)="cadastrar()">
+                <div class="mb-3">
+                    <label for="nome" class="form-label">Nome</label>
+                    <input type="text" class="form-control" id="nome" formControlName="nome"
+                        [class.is-invalid]="formSubmitted && cadastroForm.get('nome')?.invalid">
+                    @if (formSubmitted && cadastroForm.get('nome')?.hasError('required')) {
+                    <div class="invalid-feedback">Nome é obrigatório.</div>
+                    }
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">E-mail</label>
+                    <input type="email" class="form-control" id="email" formControlName="email"
+                        [class.is-invalid]="formSubmitted && cadastroForm.get('email')?.invalid">
+                    @if (formSubmitted && cadastroForm.get('email')?.hasError('required')) {
+                    <div class="invalid-feedback">E-mail é obrigatório.</div>
+                    }
+                    @if (formSubmitted && cadastroForm.get('email')?.hasError('email')) {
+                    <div class="invalid-feedback">E-mail inválido.</div>
+                    }
+                </div>
+                <div class="mb-3">
+                    <label for="senha" class="form-label">Senha</label>
+                    <input type="password" class="form-control" id="senha" formControlName="senha"
+                        [class.is-invalid]="formSubmitted && cadastroForm.get('senha')?.invalid">
+                    @if (formSubmitted && cadastroForm.get('senha')?.hasError('required')) {
+                    <div class="invalid-feedback">Senha é obrigatória.</div>
+                    }
+                    @if (formSubmitted && cadastroForm.get('senha')?.hasError('minlength')) {
+                    <div class="invalid-feedback">A senha deve ter pelo menos 6 caracteres.</div>
+                    }
+                </div>
+                <div class="mb-3">
+                    <label for="confirmarSenha" class="form-label">Confirmar Senha</label>
+                    <input type="password" class="form-control" id="confirmarSenha" formControlName="confirmarSenha"
+                        [class.is-invalid]="formSubmitted && cadastroForm.hasError('senhasNaoCoincidem')">
+                    @if (formSubmitted && cadastroForm.hasError('senhasNaoCoincidem')) {
+                    <div class="invalid-feedback">As senhas não coincidem.</div>
+                    }
+                </div>
+                <button type="submit" class="btn btn-success" [disabled]="cadastroForm.invalid && !formSubmitted"><i
+                        class="bi bi-person-plus"></i> Cadastrar</button>
+                <a class="btn btn-link ms-2" routerLink="/login"><i class="bi bi-arrow-left"></i> Voltar para Login</a>
+            </form>
+        </div>
+    </div>
+</div>
