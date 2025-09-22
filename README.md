@@ -14,4 +14,4 @@
 
 ## 🛠️ Tecnologias
 
-| Angular | Bootstrap 
+| Angular | Bootstrap |
