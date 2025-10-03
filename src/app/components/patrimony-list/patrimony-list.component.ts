@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { PatrimonyService } from '../../services/patrimony.service';
-import { AuxService } from '../../services/aux.service';
+import { UtilsService } from '../../services/utils.service';
 import { ModalService } from '../../services/modal.service';
 import { Subscription } from 'rxjs';
 
@@ -30,7 +30,7 @@ export class PatrimonyListComponent implements OnInit, OnDestroy {
 
   constructor(
     private patrimonyService: PatrimonyService,
-    private auxService: AuxService,
+    private utilsService: UtilsService,
     private fb: FormBuilder,
     private modalService: ModalService
   ) {
@@ -76,7 +76,7 @@ export class PatrimonyListComponent implements OnInit, OnDestroy {
   }
 
   loadStatuses() {
-    this.auxService.listarStatuses().subscribe({
+    this.utilsService.listarStatuses().subscribe({
       next: (data: any) => this.statuses = data.items || data,
       error: () => {
         this.mensagemErro = 'Erro ao carregar status.';

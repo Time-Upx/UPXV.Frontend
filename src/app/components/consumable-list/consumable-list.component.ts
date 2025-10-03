@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ConsumableService } from '../../services/consumable.service';
-import { AuxService } from '../../services/aux.service';
+import { UtilsService } from '../../services/utils.service';
 import { ModalService } from '../../services/modal.service';
 import { Subscription } from 'rxjs';
 
@@ -31,7 +31,7 @@ export class ConsumableListComponent implements OnInit, OnDestroy {
 
   constructor(
     private consumableService: ConsumableService,
-    private auxService: AuxService,
+    private utilsService: UtilsService,
     private fb: FormBuilder,
     private modalService: ModalService
   ) {
@@ -77,7 +77,7 @@ export class ConsumableListComponent implements OnInit, OnDestroy {
   }
 
   loadUnits() {
-    this.auxService.listarUnits().subscribe({
+    this.utilsService.listarUnits().subscribe({
       next: (data: any) => this.units = data.items || data,
       error: () => {
         this.mensagemErro = 'Erro ao carregar unidades.';
