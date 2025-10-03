@@ -1,0 +1,54 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="/">📦 WareFlow</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/home"><i class="bi bi-house-door me-1"></i>Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/consumable"><i class="bi bi-box me-1"></i>Consumíveis</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/patrimony"><i class="bi bi-building me-1"></i>Patrimônio</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid mt-4">
+  <router-outlet></router-outlet>
+</div>
+
+<!-- Modal Global de Confirmação -->
+@if (modalData?.show) {
+<div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); z-index: 1055;">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header bg-danger text-white border-0">
+        <h5 class="modal-title mb-0">
+          <i class="bi bi-exclamation-triangle me-2"></i>{{ modalData?.title || 'Confirmar Ação' }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="handleCancel()"></button>
+      </div>
+      <div class="modal-body text-center py-4">
+        <i class="bi bi-trash display-1 text-danger mb-3 opacity-75"></i>
+        <p class="mb-0 fs-5">{{ modalData?.message || 'Tem certeza desta ação?' }}</p>
+        <small class="text-muted d-block mt-2">Esta operação não pode ser desfeita.</small>
+      </div>
+      <div class="modal-footer border-0 justify-content-center gap-2">
+        <button type="button" class="btn btn-outline-secondary px-4" (click)="handleCancel()">
+          <i class="bi bi-x-circle me-2"></i>Cancelar
+        </button>
+        <button type="button" class="btn btn-danger px-4" (click)="handleConfirm()">
+          <i class="bi bi-check-lg me-2"></i>Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}
