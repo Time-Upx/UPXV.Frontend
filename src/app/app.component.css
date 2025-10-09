@@ -1,0 +1,22 @@
+#wrapper {
+    overflow-x: hidden;
+}
+
+#sidebar-wrapper {
+    min-height: 100vh;
+    transition: margin 0.25s ease-out;
+}
+
+.list-group-item-action:hover {
+    background-color: #343a40 !important;
+}
+
+@media (max-width: 768px) {
+    #sidebar-wrapper {
+        margin-left: -250px;
+    }
+
+    #sidebar-wrapper.active {
+        margin-left: 0;
+    }
+}

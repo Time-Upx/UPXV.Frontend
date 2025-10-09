@@ -5,6 +5,9 @@ import { ConsumableListComponent } from './components/consumable-list/consumable
 import { ConsumableDetailComponent } from './components/consumable-detail/consumable-detail.component';
 import { PatrimonyListComponent } from './components/patrimony-list/patrimony-list.component';
 import { PatrimonyDetailComponent } from './components/patrimony-detail/patrimony-detail.component';
+import { TagListComponent } from './components/tag-list/tag-list.component';
+import { StatusListComponent } from './components/status-list/status-list.component';
+import { UnitListComponent } from './components/unit-list/unit-list.component';
 
 export const routes: Routes = [
     { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -12,5 +15,8 @@ export const routes: Routes = [
     { path: 'consumable', component: ConsumableListComponent },
     { path: 'consumable/:nid', component: ConsumableDetailComponent },
     { path: 'patrimony', component: PatrimonyListComponent },
-    { path: 'patrimony/:nid', component: PatrimonyDetailComponent }
+    { path: 'patrimony/:nid', component: PatrimonyDetailComponent },
+    { path: 'tags', component: TagListComponent },
+    { path: 'statuses', component: StatusListComponent },
+    { path: 'units', component: UnitListComponent }
 ];

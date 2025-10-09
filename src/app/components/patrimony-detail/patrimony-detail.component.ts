@@ -7,6 +7,7 @@ import { ModalService } from '../../services/modal.service';
 import { UtilsService } from '../../services/utils.service';
 import QRCode from 'qrcode';
 import { Subscription } from 'rxjs';
+import * as bootstrap from 'bootstrap';
 
 @Component({
   selector: 'app-patrimony-detail',
@@ -54,6 +55,9 @@ export class PatrimonyDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    const tooltipList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipList.map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+
     const nid = this.route.snapshot.paramMap.get('nid');
     if (nid) {
       this.loadItem(+nid);

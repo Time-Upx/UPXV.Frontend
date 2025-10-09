@@ -1,0 +1,99 @@
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="mb-0"><i class="bi bi-ui-checks text-secondary me-2"></i>Status</h4>
+                <small class="text-muted">Gerencie status para patrimônios</small>
+            </div>
+            <button class="btn btn-secondary btn-lg shadow-sm" (click)="toggleEdit(null)">
+                <i class="bi bi-plus-lg me-2"></i>Novo Status
+            </button>
+        </div>
+
+        @if (mensagemErro) {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ mensagemErro }}
+            <button type="button" class="btn-close" (click)="mensagemErro = ''"></button>
+        </div>
+        }
+        @if (mensagemSucesso) {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>{{ mensagemSucesso }}
+            <button type="button" class="btn-close" (click)="mensagemSucesso = ''"></button>
+        </div>
+        }
+
+        <div class="row g-4">
+            @for (status of statuses; track status.nid) {
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 transition-all"
+                    style="transition: transform 0.2s, box-shadow 0.2s;" (mouseenter)="hoverCard=true"
+                    (mouseleave)="hoverCard=false">
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title fw-bold text-secondary mb-2">{{ status.tid }}</h6>
+                        <p class="card-text flex-grow-1 text-muted">{{ status.description || 'Sem descrição' }}</p>
+                        <div class="d-flex gap-2 mt-auto">
+                            <button class="btn btn-sm btn-outline-secondary flex-fill" (click)="toggleEdit(status.nid)">
+                                <i class="bi bi-pencil me-1"></i>Editar
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger"
+                                (click)="confirmarDeletar(status.nid, status.tid)">
+                                <i class="bi bi-trash me-1"></i>Deletar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            } @empty {
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-ui-checks display-1 text-muted mb-3"></i>
+                <h5 class="text-muted">Nenhum status encontrado</h5>
+                <p class="text-muted mb-4">Crie o primeiro!</p>
+                <button class="btn btn-secondary" (click)="toggleEdit(null)">+ Adicionar Status</button>
+            </div>
+            }
+        </div>
+
+        <!-- Form Inline para Criação/Edição -->
+        @if (editModeId !== null) {
+        <div class="card mt-4 shadow-lg border-0">
+            <div class="card-header bg-light border-bottom">
+                <h6 class="mb-0"><i class="bi bi-pencil me-2"></i>{{ editModeId ? 'Editar Status' : 'Novo Status' }}
+                </h6>
+            </div>
+            <div class="card-body position-relative">
+                @if (carregandoForm) {
+                <div class="position-absolute top-50 start-50 translate-middle">
+                    <div class="spinner-border text-secondary"></div>
+                </div>
+                }
+                <form [formGroup]="formGroup" (ngSubmit)="salvar(editModeId)" [class.opacity-50]="carregandoForm">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+                            <input class="form-control" formControlName="tid"
+                                [class.is-invalid]="formSubmitted && formGroup.get('tid')?.invalid">
+                            @if (formSubmitted && formGroup.get('tid')?.invalid) {
+                            <div class="invalid-feedback">Título é obrigatório.</div>
+                            }
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Descrição</label>
+                            <input class="form-control" formControlName="description">
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-secondary shadow-sm"
+                            [disabled]="formGroup.invalid || carregandoForm">
+                            <i class="bi bi-save me-2"></i>Salvar
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" (click)="toggleEdit(null)">
+                            <i class="bi bi-x-lg me-2"></i>Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        }
+    </div>
+</div>

@@ -164,6 +164,7 @@
                             <span
                                 class="badge bg-light text-black border rounded-pill px-3 py-2 d-flex align-items-center position-relative"
                                 [class.bg-primary]="isAssigned(tag.nid)" (click)="toggleAssignTag(tag.nid)"
+                                title="{{ tag.description || 'Sem descrição' }}"
                                 style="cursor: pointer; transition: all 0.2s;">
                                 <i class="bi bi-check-lg me-1" [class.d-none]="!isAssigned(tag.nid)"></i>
                                 {{ tag.tid }}
