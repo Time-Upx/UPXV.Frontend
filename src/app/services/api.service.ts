@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class ApiService {
-  private baseUrl = 'http://192.168.229.164/UPXV.Backend/api';
+  private baseUrl = 'http://10.253.131.164/UPXV.Backend/api';
 
   constructor(private http: HttpClient) { }
 
