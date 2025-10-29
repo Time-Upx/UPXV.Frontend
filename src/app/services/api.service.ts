@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class ApiService {
-  private baseUrl = 'http://localhost:5016';
+  private baseUrl = 'http://192.168.229.164/UPXV.Backend/api';
 
   constructor(private http: HttpClient) { }
 
@@ -23,6 +23,15 @@ export class ApiService {
 
   post<T>(endpoint: string, body: any): Observable<T> {
     return this.http.post<T>(`${this.baseUrl}${endpoint}`, body, { headers: this.getHeaders() });
+  }
+
+  // === POST BLOB (para exportação de imagem) ===
+  postBlob(endpoint: string, body: any = {}): Observable<Blob> {
+    const finalOptions = {
+      responseType: 'blob' as 'json', // Força tipo sem quebrar tipagem
+      headers: this.getHeaders()
+    };
+    return this.http.post(`${this.baseUrl}${endpoint}`, body, finalOptions) as Observable<Blob>;
   }
 
   put<T>(endpoint: string, body: any): Observable<T> {  // Novo: para updates

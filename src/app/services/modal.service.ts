@@ -1,11 +1,19 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
+// Tipo do item para ações (delete, etc.)
+export interface ModalActionItem {
+  nid: number;
+  name: string;
+  type: 'consumable' | 'patrimony' | 'tag' | 'status' | 'unit' | 'qrcode';
+}
+
+// Dados do modal
 export interface ModalData {
-  type: 'confirmation';
+  modalType: 'confirmation' | 'info' | 'form'; // expandível
   title?: string;
   message?: string;
-  item?: { nid: number; tid: string; type: string };
+  item?: ModalActionItem;
   show: boolean;
 }
 
@@ -13,16 +21,27 @@ export interface ModalData {
   providedIn: 'root'
 })
 export class ModalService {
-  private modalSubject = new BehaviorSubject<ModalData>({ type: 'confirmation', show: false });
+  // Estado inicial imutável
+  private initialState: ModalData = {
+    modalType: 'confirmation',
+    show: false
+  };
+
+  private modalSubject = new BehaviorSubject<ModalData>(this.initialState);
   public modal$: Observable<ModalData> = this.modalSubject.asObservable();
 
-  // Subject para callbacks de confirmação (ex: delete)
-  private confirmSubject = new Subject<{ nid: number; tid: string; type: string }>();
+  // Subject para confirmações
+  private confirmSubject = new Subject<ModalActionItem>();
+  public confirm$: Observable<ModalActionItem> = this.confirmSubject.asObservable();
 
-  // Mostrar modal de confirmação
-  showConfirmation(title: string, message: string, item: { nid: number; tid: string; type: string }) {
+  // Mostra modal de confirmação
+  showConfirmation(
+    title: string,
+    message: string,
+    item: ModalActionItem
+  ): void {
     this.modalSubject.next({
-      type: 'confirmation',
+      modalType: 'confirmation',
       title,
       message,
       item,
@@ -30,12 +49,12 @@ export class ModalService {
     });
   }
 
-  // Fechar modal
-  hideModal() {
+  // Fecha modal
+  hideModal(): void {
     this.modalSubject.next({ ...this.modalSubject.value, show: false });
   }
 
-  // Confirmar ação - Emite via Subject e fecha
+  // Confirma ação
   confirmAction(): void {
     const current = this.modalSubject.value;
     if (current.item) {
@@ -44,8 +63,8 @@ export class ModalService {
     this.hideModal();
   }
 
-  // Observable para quem quer escutar confirmações (ex: components)
-  onConfirm(): Observable<{ nid: number; tid: string; type: string }> {
-    return this.confirmSubject.asObservable();
+  // Escuta confirmações
+  onConfirm(): Observable<ModalActionItem> {
+    return this.confirm$;
   }
 }

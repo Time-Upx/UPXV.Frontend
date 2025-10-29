@@ -1,13 +1,12 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ConsumableService } from '../../services/consumable.service';
-import { ModalService } from '../../services/modal.service';
-import { UtilsService } from '../../services/utils.service';
+import { ConsumableService, Consumable, ConsumableCreateDTO } from '../../services/consumable.service';
+import { UtilsService, PageDTO, Unit, Tag } from '../../services/utils.service';
+import { ModalService, ModalActionItem } from '../../services/modal.service';
 import QRCode from 'qrcode';
 import { Subscription } from 'rxjs';
-import * as bootstrap from 'bootstrap';
 
 @Component({
   selector: 'app-consumable-detail',
@@ -17,7 +16,7 @@ import * as bootstrap from 'bootstrap';
   styleUrls: ['./consumable-detail.component.css']
 })
 export class ConsumableDetailComponent implements OnInit, OnDestroy {
-  item: any = {};
+  item: Consumable = {} as Consumable;
   carregando = true;
   qrCodeUrl = '';
   mostrandoQrCode = false;
@@ -28,52 +27,48 @@ export class ConsumableDetailComponent implements OnInit, OnDestroy {
   carregandoEdit = false;
   formSubmitted = false;
   editForm: FormGroup;
-  units: any[] = [];
-  tags: any[] = [];
+  units: Unit[] = [];
+  tags: Tag[] = [];
   showAddTagInput = false;
-  newTagTid = '';
+  newTagName = '';
   newTagDescription = '';
   carregandoTag = false;
-  selectedTagNids: number[] = [];
+  selectedTagIds: number[] = [];
 
-  utilsService: UtilsService = inject(UtilsService);
-
-  private subscription: Subscription = new Subscription();
+  private subscription = new Subscription();
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private service: ConsumableService,
+    private utilsService: UtilsService,
     private modalService: ModalService,
     private fb: FormBuilder
   ) {
     this.editForm = this.fb.group({
-      tid: ['', Validators.required],
+      name: ['', [Validators.required, Validators.minLength(2)]],
       description: [''],
-      quantity: [0, [Validators.required, Validators.min(0)]],
-      unitNid: ['', Validators.required]
+      quantity: [0, [Validators.required, Validators.min(0.01)]],
+      unitId: ['', Validators.required]
     });
   }
 
   ngOnInit() {
-    const tooltipList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipList.map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-
-    const nid = this.route.snapshot.paramMap.get('nid');
-    if (nid) {
-      this.loadItem(+nid);
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.loadItem(+id);
       this.loadUnits();
       this.loadTags();
     } else {
-      this.router.navigate(['/consumable']);
+      this.router.navigate(['/consumables']);
     }
 
     this.subscription.add(
-      this.modalService.onConfirm().subscribe(item => {
-        if (item.type === 'consumable' && item.nid === this.item.nid) {
+      this.modalService.onConfirm().subscribe((item: ModalActionItem) => {
+        if (item.type === 'consumable' && item.nid === this.item.id) {
           this.deletar(item.nid);
         } else if (item.type === 'tag') {
-          this.deletarTag(item.nid.toString());
+          this.deletarTag(item.nid);
         }
       })
     );
@@ -83,34 +78,32 @@ export class ConsumableDetailComponent implements OnInit, OnDestroy {
     this.subscription.unsubscribe();
   }
 
-  loadItem(nid: number) {
-    this.service.getById(nid).subscribe({
-      next: (data) => {
+  loadItem(id: number) {
+    this.carregando = true;
+    this.service.getById(id).subscribe({
+      next: (data: Consumable) => {
         this.item = data;
-        this.selectedTagNids = data.tags?.map((tag: any) => tag.nid) || [];
+        this.selectedTagIds = data.tags?.map(t => t.id) || [];
         this.populateEditForm();
         this.carregando = false;
       },
-      error: (err) => {
-        console.error('Erro ao carregar:', err);
-        this.mensagemErro = 'Erro ao carregar item.';
-        setTimeout(() => this.router.navigate(['/consumable']), 2000);
+      error: () => {
+        this.mensagemErro = 'Erro ao carregar consumível.';
+        setTimeout(() => this.router.navigate(['/consumables']), 2000);
       }
     });
   }
 
   loadUnits() {
-    this.utilsService.listarUnits().subscribe({
-      next: (data: any) => this.units = data.items || data,
+    this.utilsService.listarUnits(0, 100).subscribe({
+      next: (page: PageDTO<Unit>) => this.units = page.items,
       error: () => this.units = []
     });
   }
 
   loadTags() {
-    this.utilsService.listarTags().subscribe({
-      next: (data: any) => {
-        this.tags = data.items || data;
-      },
+    this.utilsService.listarTags(0, 200).subscribe({
+      next: (page: PageDTO<Tag>) => this.tags = page.items,
       error: () => {
         this.mensagemErro = 'Erro ao carregar tags.';
         this.tags = [];
@@ -119,14 +112,12 @@ export class ConsumableDetailComponent implements OnInit, OnDestroy {
   }
 
   populateEditForm() {
-    if (this.item) {
-      this.editForm.patchValue({
-        tid: this.item.tid || '',
-        description: this.item.description || '',
-        quantity: this.item.quantity || 0,
-        unitNid: this.item.unit.nid || ''
-      });
-    }
+    this.editForm.patchValue({
+      name: this.item.name,
+      description: this.item.description,
+      quantity: this.item.quantity,
+      unitId: this.item.unit?.id
+    });
   }
 
   toggleEdit() {
@@ -145,15 +136,18 @@ export class ConsumableDetailComponent implements OnInit, OnDestroy {
     this.formSubmitted = true;
     if (this.editForm.valid) {
       this.carregandoEdit = true;
-      const payload = {
-        nid: this.item.nid,
-        ...this.editForm.value,
-        tagNids: this.selectedTagNids
+      const payload: Partial<ConsumableCreateDTO> = {
+        name: this.editForm.value.name,
+        description: this.editForm.value.description,
+        quantity: +this.editForm.value.quantity,
+        unitId: +this.editForm.value.unitId,
+        tagIds: this.selectedTagIds
       };
 
-      this.service.atualizar(payload).subscribe({
-        next: (response) => {
-          this.item = { ...this.item, ...response };
+      this.service.atualizar(this.item.id, payload).subscribe({
+        next: (updated: Consumable) => {
+          this.item = updated;
+          this.selectedTagIds = updated.tags?.map(t => t.id) || [];
           this.mensagemSucesso = 'Consumível atualizado!';
           this.toggleEdit();
           setTimeout(() => this.mensagemSucesso = '', 3000);
@@ -170,31 +164,28 @@ export class ConsumableDetailComponent implements OnInit, OnDestroy {
   toggleAddTagInput() {
     this.showAddTagInput = !this.showAddTagInput;
     if (!this.showAddTagInput) {
-      this.newTagTid = '';
+      this.newTagName = '';
       this.newTagDescription = '';
     }
   }
 
   adicionarTag() {
-    const tidTrimmed = this.newTagTid.trim();
-    if (!tidTrimmed) {
-      this.mensagemErro = 'Título é obrigatório.';
+    const name = this.newTagName.trim();
+    if (!name) {
+      this.mensagemErro = 'Nome da tag é obrigatório.';
       setTimeout(() => this.mensagemErro = '', 3000);
       return;
     }
 
-    const exists = this.tags.some(tag => tag.tid.toLowerCase() === tidTrimmed.toLowerCase());
-    if (exists) {
-      this.mensagemErro = 'Tag com este título já existe.';
+    if (this.tags.some(t => t.name.toLowerCase() === name.toLowerCase())) {
+      this.mensagemErro = 'Tag já existe.';
       setTimeout(() => this.mensagemErro = '', 3000);
       return;
     }
 
     this.carregandoTag = true;
-    const payload = {
-      tid: tidTrimmed,
-      description: this.newTagDescription.trim() || ''
-    };
+    const payload = { name, description: this.newTagDescription.trim() || '' };
+
     this.utilsService.adicionarTag(payload).subscribe({
       next: () => {
         this.mensagemSucesso = 'Tag adicionada!';
@@ -202,31 +193,31 @@ export class ConsumableDetailComponent implements OnInit, OnDestroy {
         this.toggleAddTagInput();
         setTimeout(() => this.mensagemSucesso = '', 3000);
       },
-      error: (err) => {
-        this.mensagemErro = err.error?.message || 'Erro ao adicionar tag.';
+      error: () => {
+        this.mensagemErro = 'Erro ao adicionar tag.';
         setTimeout(() => this.mensagemErro = '', 5000);
       },
       complete: () => this.carregandoTag = false
     });
   }
 
-  confirmarDeletarTag(nid: number, tid: string) {
+  confirmarDeletarTag(id: number, name: string) {
     this.modalService.showConfirmation(
       'Excluir Tag',
-      `Deseja excluir a tag "${tid}"?`,
-      { nid, tid, type: 'tag' }
+      `Deseja excluir "<strong>${name}</strong>"?`,
+      { nid: id, name: name, type: 'tag' }
     );
   }
 
-  deletarTag(nid: string) {
-    this.utilsService.deletarTag(nid).subscribe({
+  deletarTag(id: number) {
+    this.utilsService.deletarTag(id).subscribe({
       next: () => {
         this.mensagemSucesso = 'Tag excluída!';
         this.loadTags();
-        this.selectedTagNids = this.selectedTagNids.filter(id => id.toString() !== nid);
+        this.selectedTagIds = this.selectedTagIds.filter(t => t !== id);
         setTimeout(() => this.mensagemSucesso = '', 3000);
       },
-      error: (err) => {
+      error: () => {
         this.mensagemErro = 'Erro ao excluir tag.';
         setTimeout(() => this.mensagemErro = '', 5000);
       }
@@ -234,28 +225,23 @@ export class ConsumableDetailComponent implements OnInit, OnDestroy {
   }
 
   toggleAssignTag(tagId: number) {
-    if (this.selectedTagNids.includes(tagId)) {
-      this.selectedTagNids = this.selectedTagNids.filter(id => id !== tagId);
-    } else {
-      this.selectedTagNids.push(tagId);
-    }
+    this.selectedTagIds = this.selectedTagIds.includes(tagId)
+      ? this.selectedTagIds.filter(id => id !== tagId)
+      : [...this.selectedTagIds, tagId];
   }
 
   isAssigned(tagId: number): boolean {
-    return this.selectedTagNids.includes(tagId);
+    return this.selectedTagIds.includes(tagId);
   }
 
   gerarQrCode() {
-    const link = `${this.baseUrl}/consumable/${this.item.nid}`;
-    QRCode.toDataURL(link, {
-      width: 300,
-      margin: 1,
-      color: { dark: '#000000', light: '#FFFFFF' },
-      errorCorrectionLevel: 'H'
-    }).then(url => {
-      this.qrCodeUrl = url;
-      this.mostrandoQrCode = true;
-    }).catch(err => console.error('Erro QR:', err));
+    const link = `${this.baseUrl}/consumables/${this.item.id}`;
+    QRCode.toDataURL(link, { width: 300, margin: 1, errorCorrectionLevel: 'H' })
+      .then(url => {
+        this.qrCodeUrl = url;
+        this.mostrandoQrCode = true;
+      })
+      .catch(() => this.mensagemErro = 'Erro ao gerar QR Code.');
   }
 
   fecharQrCode() {
@@ -265,35 +251,42 @@ export class ConsumableDetailComponent implements OnInit, OnDestroy {
 
   imprimirQrCode() {
     if (!this.qrCodeUrl) return;
-    const printContent = `
-      <!DOCTYPE html>
-      <html><head><title>QR Code - ${this.item.tid}</title>
-      <style>body { font-family: Arial; text-align: center; padding: 20px; } img { max-width: 200px; }</style></head>
-      <body onload="window.print(); window.close()">
-        <h2>${this.item.tid}</h2>
-        <img src="${this.qrCodeUrl}" />
-        <p>${this.baseUrl}/consumable/${this.item.nid}</p>
-      </body></html>
-    `;
     const win = window.open('', '_blank');
-    win?.document.write(printContent);
-    win?.document.close();
+    if (win) {
+      win.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>QR Code - ${this.item.name}</title>
+            <style>
+              body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+              img { max-width: 200px; margin: 20px 0; }
+            </style>
+          </head>
+          <body onload="window.print(); window.close()">
+            <h2>${this.item.name}</h2>
+            <img src="${this.qrCodeUrl}" />
+            <p><small>${this.baseUrl}/consumables/${this.item.id}</small></p>
+          </body>
+        </html>
+      `);
+      win.document.close();
+    }
   }
 
-  confirmarDeletar(nid: number, tid: string) {
+  confirmarDeletar(id: number, name: string) {
     this.modalService.showConfirmation(
       'Excluir Consumível',
-      `Deseja realmente excluir "${tid}"?`,
-      { nid, tid, type: 'consumable' }
+      `Deseja excluir "<strong>${name}</strong>"?`,
+      { nid: id, name, type: 'consumable' }
     );
   }
 
-  deletar(nid: number) {
-    this.service.deletar(nid).subscribe({
-      next: () => this.router.navigate(['/consumable']),
-      error: (err) => {
-        console.error('Erro ao deletar:', err);
-        this.mensagemErro = 'Erro ao deletar.';
+  deletar(id: number) {
+    this.service.deletar(id).subscribe({
+      next: () => this.router.navigate(['/consumables']),
+      error: () => {
+        this.mensagemErro = 'Erro ao deletar consumível.';
         setTimeout(() => this.mensagemErro = '', 5000);
       }
     });

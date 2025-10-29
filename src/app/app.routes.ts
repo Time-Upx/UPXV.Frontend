@@ -8,15 +8,22 @@ import { PatrimonyDetailComponent } from './components/patrimony-detail/patrimon
 import { TagListComponent } from './components/tag-list/tag-list.component';
 import { StatusListComponent } from './components/status-list/status-list.component';
 import { UnitListComponent } from './components/unit-list/unit-list.component';
+import { ItemListComponent } from './components/items-list/items-list.component';
+import { QRCodeListComponent } from './components/qrcode-list/qrcode-list.component';
+import { QRCodeDetailComponent } from './components/qrcode-detail/qrcode-detail.component';
 
 export const routes: Routes = [
     { path: '', redirectTo: '/home', pathMatch: 'full' },
     { path: 'home', component: HomeComponent },
-    { path: 'consumable', component: ConsumableListComponent },
-    { path: 'consumable/:nid', component: ConsumableDetailComponent },
-    { path: 'patrimony', component: PatrimonyListComponent },
-    { path: 'patrimony/:nid', component: PatrimonyDetailComponent },
+    { path: 'consumables', component: ConsumableListComponent },
+    { path: 'consumables/:nid', component: ConsumableDetailComponent },
+    { path: 'patrimonies', component: PatrimonyListComponent },
+    { path: 'patrimonies/:nid', component: PatrimonyDetailComponent },
     { path: 'tags', component: TagListComponent },
     { path: 'statuses', component: StatusListComponent },
-    { path: 'units', component: UnitListComponent }
+    { path: 'units', component: UnitListComponent },
+    { path: 'items', component: ItemListComponent },
+    { path: 'qrcodes', component: QRCodeListComponent },
+    { path: 'qrcodes/:id', component: QRCodeDetailComponent },
+    { path: 'qrcodes/:id/read', redirectTo: '/qrcodes/:id', pathMatch: 'full' }
 ];

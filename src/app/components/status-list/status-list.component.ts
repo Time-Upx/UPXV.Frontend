@@ -1,9 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { UtilsService } from '../../services/utils.service';
-import { ModalService } from '../../services/modal.service';
+import { UtilsService, PageDTO } from '../../services/utils.service';
+import { ModalService, ModalActionItem } from '../../services/modal.service';
 import { Subscription } from 'rxjs';
+
+interface Status {
+  id: number;
+  name: string;
+  description?: string;
+}
 
 @Component({
   selector: 'app-status-list',
@@ -12,18 +18,26 @@ import { Subscription } from 'rxjs';
   templateUrl: './status-list.component.html',
   styleUrls: ['./status-list.component.css']
 })
-export class StatusListComponent implements OnInit {
-  statuses: any[] = [];
+export class StatusListComponent implements OnInit, OnDestroy {
+  statuses: Status[] = [];
+  filteredStatuses: Status[] = [];
+  searchTerm = '';
   mensagemErro = '';
   mensagemSucesso = '';
   formGroup: FormGroup;
   editModeId: number | null = null;
   carregandoForm = false;
   formSubmitted = false;
+  loading = false;
 
-  hoverCard = false;
+  // Paginação
+  currentPage = 0;
+  pageSize = 10;
+  totalCount = 0;
+  totalPages = 0;
+  pageNumbers: number[] = [];
 
-  private subscription: Subscription = new Subscription();
+  private subscription = new Subscription();
 
   constructor(
     private utilsService: UtilsService,
@@ -31,15 +45,16 @@ export class StatusListComponent implements OnInit {
     private fb: FormBuilder
   ) {
     this.formGroup = this.fb.group({
-      tid: ['', Validators.required],
+      name: ['', [Validators.required, Validators.minLength(2)]],
       description: ['']
     });
   }
 
   ngOnInit() {
     this.loadStatuses();
+
     this.subscription.add(
-      this.modalService.onConfirm().subscribe(item => {
+      this.modalService.onConfirm().subscribe((item: ModalActionItem) => {
         if (item.type === 'status') {
           this.deletar(item.nid);
         }
@@ -52,80 +67,127 @@ export class StatusListComponent implements OnInit {
   }
 
   loadStatuses() {
-    this.utilsService.listarStatuses().subscribe({
-      next: (data: any) => this.statuses = data.items || data,
-      error: () => this.mensagemErro = 'Erro ao carregar status.'
+    this.loading = true;
+    this.mensagemErro = '';
+
+    this.utilsService.listarStatuses(this.currentPage, this.pageSize).subscribe({
+      next: (page: PageDTO<Status>) => {
+        this.statuses = page.items;
+        this.filteredStatuses = [...this.statuses];
+        this.totalCount = page.totalCount;
+        this.totalPages = page.totalPages;
+        this.updatePageNumbers();
+        this.loading = false;
+      },
+      error: () => {
+        this.mensagemErro = 'Erro ao carregar status.';
+        this.loading = false;
+      }
     });
   }
 
-  toggleEdit(nid: number | null) {
-    this.editModeId = nid;
+  onSearch() {
+    const term = this.searchTerm.toLowerCase().trim();
+    this.filteredStatuses = this.statuses.filter(s =>
+      s.name.toLowerCase().includes(term) ||
+      (s.description && s.description.toLowerCase().includes(term))
+    );
+  }
+
+  updatePageNumbers() {
+    const maxVisible = 5;
+    const pages: number[] = [];
+
+    if (this.totalPages <= maxVisible) {
+      for (let i = 0; i < this.totalPages; i++) pages.push(i);
+    } else {
+      const start = Math.max(0, this.currentPage - 2);
+      const end = Math.min(this.totalPages, start + maxVisible);
+
+      if (start > 0) pages.push(0);
+      if (start > 1) pages.push(-1);
+      for (let i = start; i < end; i++) pages.push(i);
+      if (end < this.totalPages - 1) pages.push(-1);
+      if (end < this.totalPages) pages.push(this.totalPages - 1);
+    }
+    this.pageNumbers = pages;
+  }
+
+  goToPage(page: number) {
+    if (page >= 0 && page < this.totalPages && page !== this.currentPage) {
+      this.currentPage = page;
+      this.loadStatuses();
+    }
+  }
+
+  toggleEdit(id: number | null) {
+    this.editModeId = id;
     this.formSubmitted = false;
-    if (nid) {
-      const status = this.statuses.find(s => s.nid === nid);
-      this.formGroup.patchValue({
-        tid: status.tid,
-        description: status.description
-      });
+    if (id) {
+      const status = this.statuses.find(s => s.id === id);
+      if (status) {
+        this.formGroup.patchValue({
+          name: status.name,
+          description: status.description
+        });
+      }
     } else {
       this.formGroup.reset();
     }
   }
 
-  salvar(nid: number | null) {
+  salvar(id: number | null) {
     this.formSubmitted = true;
     if (this.formGroup.valid) {
       this.carregandoForm = true;
       const payload = this.formGroup.value;
-      if (nid) {
-        payload.nid = nid;
-        this.utilsService.atualizarStatus(payload).subscribe({
-          next: () => {
-            this.mensagemSucesso = 'Status atualizado!';
-            this.loadStatuses();
-            this.toggleEdit(null);
-            setTimeout(() => this.mensagemSucesso = '', 3000);
-          },
-          error: () => this.mensagemErro = 'Erro ao atualizar status.',
-          complete: () => this.carregandoForm = false
-        });
-      } else {
-        this.utilsService.adicionarStatus(payload).subscribe({
-          next: () => {
-            this.mensagemSucesso = 'Status adicionado!';
-            this.loadStatuses();
-            this.toggleEdit(null);
-            setTimeout(() => this.mensagemSucesso = '', 3000);
-          },
-          error: () => this.mensagemErro = 'Erro ao adicionar status.',
-          complete: () => this.carregandoForm = false
-        });
-      }
+
+      const obs$ = id
+        ? this.utilsService.atualizarStatus(id, payload)
+        : this.utilsService.adicionarStatus(payload);
+
+      obs$.subscribe({
+        next: () => {
+          this.mensagemSucesso = id ? 'Status atualizado!' : 'Status adicionado!';
+          this.loadStatuses();
+          this.toggleEdit(null);
+          setTimeout(() => this.mensagemSucesso = '', 3000);
+        },
+        error: (err) => {
+          this.mensagemErro = err.error?.message || (id ? 'Erro ao atualizar.' : 'Erro ao adicionar.');
+          setTimeout(() => this.mensagemErro = '', 5000);
+        },
+        complete: () => this.carregandoForm = false
+      });
     }
   }
 
-  confirmarDeletar(nid: number, tid: string) {
-    this.utilsService.checkStatusUsage(nid).subscribe({
-      next: (data: any) => {
-        if (data.items.length > 0) {
+  confirmarDeletar(id: number, name: string) {
+    this.utilsService.checkStatusUsage(id).subscribe({
+      next: (data: PageDTO<any>) => {
+        if (data.totalCount > 0) {
           this.mensagemErro = 'Status em uso por patrimônios. Não pode ser deletado.';
-          setTimeout(() => this.mensagemErro = '', 3000);
+          setTimeout(() => this.mensagemErro = '', 4000);
           return;
         }
+
         this.modalService.showConfirmation(
           'Excluir Status',
-          `Deseja excluir o status "${tid}"?`,
-          { nid, tid, type: 'status' }
+          `Tem certeza que deseja excluir o status "<strong>${name}</strong>"?`,
+          { nid: id, name: `S${id}`, type: 'status' }
         );
       },
-      error: () => this.mensagemErro = 'Erro ao verificar uso do status.'
+      error: () => {
+        this.mensagemErro = 'Erro ao verificar uso do status.';
+        setTimeout(() => this.mensagemErro = '', 4000);
+      }
     });
   }
 
-  deletar(nid: number) {
-    this.utilsService.deletarStatus(nid).subscribe({
+  deletar(id: number) {
+    this.utilsService.deletarStatus(id).subscribe({
       next: () => {
-        this.mensagemSucesso = 'Status excluído!';
+        this.mensagemSucesso = 'Status excluído com sucesso!';
         this.loadStatuses();
         setTimeout(() => this.mensagemSucesso = '', 3000);
       },

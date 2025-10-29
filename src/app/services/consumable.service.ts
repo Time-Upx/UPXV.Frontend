@@ -1,32 +1,54 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { PageService } from './page.service';
+import { PageDTO, Unit, Tag } from './utils.service';
+
+export interface Consumable {
+  id: number;
+  name: string;
+  description?: string;
+  quantity: number;
+  unit?: Unit;
+  tags?: Tag[];
+}
+
+export interface ConsumableCreateDTO {
+  name: string;
+  description?: string;
+  quantity: number;
+  unitId: number;
+  tagIds?: number[];
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class ConsumableService {
-  private endpoint = '/Consumable';
+  private endpoint = '/consumables';
 
-  constructor(private api: ApiService) { }
+  constructor(
+    private api: ApiService,
+    private pageService: PageService
+  ) { }
 
-  listar(page: number = 0, size: number = 10): Observable<any[]> {
-    return this.api.get<any[]>(this.endpoint, { page, size });
+  listar(pageIndex: number = 0, pageSize: number = 10): Observable<PageDTO<Consumable>> {
+    return this.pageService.listar<Consumable>(this.endpoint, pageIndex, pageSize);
   }
 
-  criar(consumable: any): Observable<any> {
-    return this.api.post<any>(this.endpoint, consumable);
+  criar(consumable: ConsumableCreateDTO): Observable<Consumable> {
+    return this.api.post<Consumable>(this.endpoint, consumable);
   }
 
-  atualizar(consumable: any): Observable<any> {
-    return this.api.put<any>(this.endpoint, consumable);  // PUT para /Consumable com DTO incluindo nid
+  atualizar(id: number, consumable: Partial<ConsumableCreateDTO>): Observable<Consumable> {
+    return this.api.put<Consumable>(`${this.endpoint}/${id}`, consumable);
   }
 
-  getById(nid: number): Observable<any> {
-    return this.api.get<any>(`${this.endpoint}/${nid}`);
+  getById(id: number): Observable<Consumable> {
+    return this.api.get<Consumable>(`${this.endpoint}/${id}`);
   }
 
-  deletar(nid: number): Observable<any> {
-    return this.api.delete<any>(`${this.endpoint}/${nid}`);
+  deletar(id: number): Observable<void> {
+    return this.api.delete<void>(`${this.endpoint}/${id}`);
   }
 }

@@ -1,0 +1,164 @@
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="mb-0"><i class="bi bi-qr-code-scan text-primary me-2"></i>QRCodes</h4>
+                <small class="text-muted">Gerencie QRCodes dinâmicos</small>
+            </div>
+            <button class="btn btn-primary btn-lg shadow-sm" (click)="toggleForm()">
+                <i class="bi bi-plus-lg me-2"></i>{{ formVisible ? 'Cancelar' : 'Novo QRCode' }}
+            </button>
+        </div>
+
+        <!-- Mensagens -->
+        @if (mensagemErro) {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ mensagemErro }}
+            <button class="btn-close" (click)="mensagemErro = ''"></button>
+        </div>
+        }
+        @if (mensagemSucesso) {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle-fill me-2"></i>{{ mensagemSucesso }}
+            <button class="btn-close" (click)="mensagemSucesso = ''"></button>
+        </div>
+        }
+
+        <!-- Formulário -->
+        @if (formVisible) {
+        <div class="card mb-4 shadow-lg border-0">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Novo QRCode</h6>
+            </div>
+            <div class="card-body position-relative">
+                @if (carregandoForm) {
+                <div class="position-absolute top-50 start-50 translate-middle">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+                }
+                <form [formGroup]="formGroup" (ngSubmit)="criar()" [class.opacity-50]="carregandoForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Intent <span class="text-danger">*</span></label>
+                            <select class="form-select" formControlName="intentId"
+                                [class.is-invalid]="formSubmitted && formGroup.get('intentId')?.invalid">
+                                <option value="">Selecione...</option>
+                                @for (intent of intents; track intent.id) {
+                                <option [value]="intent.id">{{ intent.name }} ({{ intent.type === 1 ? 'Link' : 'Ação'
+                                    }})</option>
+                                }
+                            </select>
+                            @if (formSubmitted && formGroup.get('intentId')?.invalid) {
+                            <div class="invalid-feedback">Selecione um intent.</div>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nome <span class="text-danger">*</span></label>
+                            <input class="form-control" formControlName="name"
+                                [class.is-invalid]="formSubmitted && formGroup.get('name')?.invalid">
+                            @if (formSubmitted && formGroup.get('name')?.errors?.['required']) {
+                            <div class="invalid-feedback">Nome é obrigatório.</div>
+                            }
+                            @if (formSubmitted && formGroup.get('name')?.errors?.['minlength']) {
+                            <div class="invalid-feedback">Mínimo 2 caracteres.</div>
+                            }
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Descrição</label>
+                            <input class="form-control" formControlName="description">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Expiração (opcional)</label>
+                            <input type="datetime-local" class="form-control" formControlName="expiration">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Senha (opcional)</label>
+                            <input type="password" class="form-control" formControlName="password">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Limite de usos (opcional)</label>
+                            <input type="number" min="1" class="form-control" formControlName="usageLimit">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Argumentos (JSON)</label>
+                            <textarea class="form-control" rows="3" formControlName="intentArguments"
+                                placeholder='{"key": "value"}'></textarea>
+                            <small class="text-muted">{{ 'Ex: {"itemId": "123}' }}</small>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary shadow-sm"
+                            [disabled]="formGroup.invalid || carregandoForm">
+                            <i class="bi bi-save me-2"></i>Salvar
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" (click)="toggleForm()">
+                            <i class="bi bi-x-lg me-2"></i>Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        }
+
+
+        <!-- Lista -->
+        <div class="row g-4">
+            @for (qr of qrcodes; track qr.id) {
+            <div class="col-lg-4 col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title fw-bold text-primary mb-1">{{ qr.name }}</h6>
+                        <p class="card-text text-muted small mb-2">{{ qr.description || 'Sem descrição' }}</p>
+                        <div class="text-muted small mb-3">
+                            <i class="bi bi-link-45deg me-1"></i>{{ qr.intent.name }} |
+                            <i class="bi bi-clock me-1 ms-2"></i>{{ qr.timesUsed }} usos
+                        </div>
+                        <div class="d-flex gap-1 mt-auto">
+                            <a routerLink="/qrcodes/{{ qr.id }}" class="btn btn-sm btn-outline-primary flex-fill">
+                                <i class="bi bi-eye me-1"></i>Ver
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger"
+                                (click)="confirmarDeletar(qr.id, qr.name || '')">
+                                <i class="bi bi-trash me-1"></i>
+                            </button>
+                        </div>
+                        @if (qr.hasExpired || qr.hasReachedUsageLimit) {
+                        <span class="badge bg-danger position-absolute top-0 end-0 m-2">
+                            {{ qr.hasExpired ? 'Expirado' : 'Limite Atingido' }}
+                        </span>
+                        }
+                    </div>
+                </div>
+            </div>
+            } @empty {
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-qr-code display-1 text-muted mb-3"></i>
+                <h5 class="text-muted">Nenhum QRCode encontrado</h5>
+                <button class="btn btn-primary" (click)="toggleForm()">+ Criar Primeiro</button>
+            </div>
+            }
+        </div>
+
+        <!-- Paginação -->
+        @if (totalPages > 1) {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" [class.disabled]="currentPageIndex === 0">
+                    <button class="page-link" (click)="goToPage(currentPageIndex - 1)">Anterior</button>
+                </li>
+                @for (page of pageNumbers; track page) {
+                <li class="page-item" [class.active]="page === currentPageIndex" [class.disabled]="page === -1">
+                    <button class="page-link" (click)="goToPage(page)">
+                        {{ page === -1 ? '...' : page + 1 }}
+                    </button>
+                </li>
+                }
+                <li class="page-item" [class.disabled]="currentPageIndex === totalPages - 1">
+                    <button class="page-link" (click)="goToPage(currentPageIndex + 1)">Próximo</button>
+                </li>
+            </ul>
+        </nav>
+        }
+    </div>
+</div>

@@ -1,17 +1,24 @@
 <div class="row">
     <div class="col-12">
-        <!-- Header com Gradient e Ícone -->
+        <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h4 class="mb-0"><i class="bi bi-building text-success me-2"></i>Patrimônio</h4>
                 <small class="text-muted">Gerencie bens duráveis e equipamentos</small>
             </div>
-            <button class="btn btn-success btn-lg shadow-sm" (click)="toggleForm()">
-                <i class="bi bi-plus-lg me-2"></i>{{ formVisible ? 'Cancelar' : 'Novo Patrimônio' }}
-            </button>
+            <div class="d-flex gap-2">
+                <div class="input-group" style="max-width: 300px;">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" placeholder="Buscar por Nome, descrição, status ou tag..."
+                        [(ngModel)]="searchTerm" (ngModelChange)="onSearch()">
+                </div>
+                <button class="btn btn-success btn-lg shadow-sm" (click)="toggleForm()">
+                    <i class="bi bi-plus-lg me-2"></i>{{ formVisible ? 'Cancelar' : 'Novo Patrimônio' }}
+                </button>
+            </div>
         </div>
 
-        <!-- Mensagens com Ícones e Auto-Hide -->
+        <!-- Mensagens -->
         @if (mensagemErro) {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ mensagemErro }}
@@ -25,7 +32,7 @@
         </div>
         }
 
-        <!-- Form com Loading Overlay -->
+        <!-- Formulário -->
         @if (formVisible) {
         <div class="card mb-4 shadow-lg border-0">
             <div class="card-header bg-light border-bottom">
@@ -34,31 +41,32 @@
             <div class="card-body position-relative">
                 @if (carregandoForm) {
                 <div class="position-absolute top-50 start-50 translate-middle">
-                    <div class="spinner-border text-success" role="status">
-                        <span class="visually-hidden">Salvando...</span>
-                    </div>
+                    <div class="spinner-border text-success"></div>
                 </div>
                 }
                 <form [formGroup]="formGroup" (ngSubmit)="criar()" [class.opacity-50]="carregandoForm">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">TID <span class="text-danger">*</span></label>
-                            <input class="form-control" formControlName="tid"
-                                [class.is-invalid]="formGroup.get('tid')?.invalid && formSubmitted">
-                            @if (formSubmitted && formGroup.get('tid')?.invalid) {
-                            <div class="invalid-feedback">TID é obrigatório.</div>
+                            <label class="form-label fw-semibold">Nome <span class="text-danger">*</span></label>
+                            <input class="form-control" formControlName="name"
+                                [class.is-invalid]="formSubmitted && formGroup.get('name')?.invalid">
+                            @if (formSubmitted && formGroup.get('name')?.errors?.['required']) {
+                            <div class="invalid-feedback">Nome é obrigatório.</div>
+                            }
+                            @if (formSubmitted && formGroup.get('name')?.errors?.['minlength']) {
+                            <div class="invalid-feedback">Mínimo 2 caracteres.</div>
                             }
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Status <span class="text-danger">*</span></label>
-                            <select class="form-select" formControlName="statusNid"
-                                [class.is-invalid]="formGroup.get('statusNid')?.invalid && formSubmitted">
+                            <select class="form-select" formControlName="statusId"
+                                [class.is-invalid]="formSubmitted && formGroup.get('statusId')?.invalid">
                                 <option value="">Selecione um status</option>
-                                @for (status of statuses; track status.nid) {
-                                <option [value]="status.nid">{{ status.tid }}</option>
+                                @for (status of statuses; track status.id) {
+                                <option [value]="status.id">{{ status.name }}</option>
                                 }
                             </select>
-                            @if (formSubmitted && formGroup.get('statusNid')?.invalid) {
+                            @if (formSubmitted && formGroup.get('statusId')?.invalid) {
                             <div class="invalid-feedback">Selecione um status.</div>
                             }
                         </div>
@@ -72,13 +80,13 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Tags (IDs separados por vírgula)</label>
-                            <input class="form-control" formControlName="tagNids" placeholder="Ex: 1, 2, 3">
+                            <input class="form-control" formControlName="tagIds" placeholder="Ex: 1, 2, 3">
                         </div>
                     </div>
                     <div class="d-flex gap-2 mt-4">
                         <button type="submit" class="btn btn-success shadow-sm"
                             [disabled]="formGroup.invalid || carregandoForm">
-                            <i class="bi bi-save me-2"></i>Salvar Patrimônio
+                            <i class="bi bi-save me-2"></i>Salvar
                         </button>
                         <button type="button" class="btn btn-outline-secondary" (click)="toggleForm()">
                             <i class="bi bi-x-lg me-2"></i>Cancelar
@@ -89,40 +97,105 @@
         </div>
         }
 
-        <!-- Grid de Cards com Hover Effects -->
+        <!-- Loading -->
+        @if (loading) {
+        <div class="text-center py-5">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="mt-3 text-muted">Carregando patrimônios...</p>
+        </div>
+        }
+
+        <!-- Lista -->
+        @if (!loading && filteredPatrimonies.length > 0) {
         <div class="row g-4">
-            @for (item of patrimonies; track item.nid) {
+            @for (item of filteredPatrimonies; track item.id) {
             <div class="col-lg-4 col-md-6">
                 <div class="card border-0 shadow-sm h-100 transition-all"
-                    style="transition: transform 0.2s, box-shadow 0.2s;" (mouseenter)="hoverCard=true"
-                    (mouseleave)="hoverCard=false">
+                    style="transition: transform 0.2s, box-shadow 0.2s;">
                     <div class="card-body d-flex flex-column">
-                        <h6 class="card-title fw-bold text-success mb-2">{{ item.tid }}</h6>
+                        <h6 class="card-title fw-bold text-success mb-2">{{ item.name }}</h6>
                         <p class="card-text flex-grow-1 text-muted">{{ item.description || 'Sem descrição' }}</p>
-                        <div class="text-muted small mb-3">
-                            <i class="bi bi-ui-checks me-1"></i>Status: <span class="badge bg-info">{{ item.status?.tid
-                                || 'N/A' }}</span>
+
+                        <!-- Status -->
+                        <div class="text-muted small mb-2">
+                            <i class="bi bi-ui-checks me-1"></i>Status:
+                            <span class="badge bg-info">{{ item.status?.name || 'N/A' }}</span>
                         </div>
+
+                        <!-- Tags -->
+                        <div class="text-muted small mb-3">
+                            @if (item.tags && item.tags.length > 0) {
+                            <i class="bi bi-tags me-1"></i>
+                            @for (tag of item.tags; track tag.id) {
+                            <span class="badge bg-light text-dark border me-1">{{ tag.name }}</span>
+                            }
+                            } @else {
+                            <span class="text-muted fst-italic">Sem tags</span>
+                            }
+                        </div>
+
+                        <!-- Ações -->
                         <div class="d-flex gap-2 mt-auto">
-                            <a routerLink="/patrimony/{{ item.nid }}" class="btn btn-sm btn-outline-success flex-fill">
+                            <a routerLink="/patrimonies/{{ item.id }}" class="btn btn-sm btn-outline-success flex-fill">
                                 <i class="bi bi-eye me-1"></i>Ver Detalhes
                             </a>
                             <button class="btn btn-sm btn-outline-danger"
-                                (click)="confirmarDeletar(item.nid, item.tid)">
+                                (click)="confirmarDeletar(item.id, item.name)">
                                 <i class="bi bi-trash me-1"></i>Deletar
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
-            } @empty {
-            <div class="col-12 text-center py-5">
-                <i class="bi bi-building display-1 text-muted mb-3"></i>
-                <h5 class="text-muted">Nenhum patrimônio encontrado</h5>
-                <p class="text-muted mb-4">Crie o primeiro para começar!</p>
-                <button class="btn btn-success" (click)="toggleForm()">+ Adicionar Patrimônio</button>
-            </div>
             }
         </div>
+
+        <!-- Paginação -->
+        @if (totalPages > 1) {
+        <nav aria-label="Paginação de patrimônios" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" [class.disabled]="currentPage === 0">
+                    <button class="page-link" (click)="goToPage(0)" [disabled]="currentPage === 0">Primeira</button>
+                </li>
+                <li class="page-item" [class.disabled]="currentPage === 0">
+                    <button class="page-link" (click)="goToPage(currentPage - 1)"
+                        [disabled]="currentPage === 0">Anterior</button>
+                </li>
+
+                @for (page of pageNumbers; track page) {
+                <li class="page-item" [class.active]="page === currentPage" [class.disabled]="page === -1">
+                    @if (page === -1) {
+                    <span class="page-link">...</span>
+                    } @else {
+                    <button class="page-link" (click)="goToPage(page)">{{ page + 1 }}</button>
+                    }
+                </li>
+                }
+
+                <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+                    <button class="page-link" (click)="goToPage(currentPage + 1)"
+                        [disabled]="currentPage === totalPages - 1">Próxima</button>
+                </li>
+                <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+                    <button class="page-link" (click)="goToPage(totalPages - 1)"
+                        [disabled]="currentPage === totalPages - 1">Última</button>
+                </li>
+            </ul>
+            <p class="text-center text-muted small mt-2">
+                Mostrando página {{ currentPage + 1 }} de {{ totalPages }} ({{ totalCount }} itens)
+            </p>
+        </nav>
+        }
+
+        } @else if (!loading) {
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-building display-1 text-muted mb-3"></i>
+            <h5 class="text-muted">Nenhum patrimônio encontrado</h5>
+            <p class="text-muted mb-4">Crie o primeiro para começar!</p>
+            <button class="btn btn-success" (click)="toggleForm()">+ Adicionar Patrimônio</button>
+        </div>
+        }
     </div>
 </div>

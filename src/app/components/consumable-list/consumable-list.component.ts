@@ -2,9 +2,9 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { ConsumableService } from '../../services/consumable.service';
-import { UtilsService } from '../../services/utils.service';
-import { ModalService } from '../../services/modal.service';
+import { ConsumableService, Consumable, ConsumableCreateDTO } from '../../services/consumable.service';
+import { UtilsService, PageDTO, Unit } from '../../services/utils.service';
+import { ModalService, ModalActionItem } from '../../services/modal.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -15,8 +15,8 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./consumable-list.component.css']
 })
 export class ConsumableListComponent implements OnInit, OnDestroy {
-  consumables: any[] = [];
-  units: any[] = [];
+  consumables: Consumable[] = [];
+  units: Unit[] = [];
   formVisible = false;
   mensagemErro = '';
   mensagemSucesso = '';
@@ -24,10 +24,7 @@ export class ConsumableListComponent implements OnInit, OnDestroy {
   carregandoForm = false;
   formGroup: FormGroup;
 
-  // Correção: Adicionada prop para hover effect
-  hoverCard = false;
-
-  private subscription: Subscription = new Subscription();
+  private subscription = new Subscription();
 
   constructor(
     private consumableService: ConsumableService,
@@ -36,11 +33,11 @@ export class ConsumableListComponent implements OnInit, OnDestroy {
     private modalService: ModalService
   ) {
     this.formGroup = this.fb.group({
-      tid: ['', Validators.required],
+      name: ['', [Validators.required, Validators.minLength(2)]],
       description: [''],
-      quantity: [0, [Validators.required, Validators.min(0)]],
-      unitNid: ['', Validators.required],
-      tagNids: ['']
+      quantity: [0, [Validators.required, Validators.min(0.01)]],
+      unitId: ['', Validators.required],
+      tagIds: ['']
     });
   }
 
@@ -48,9 +45,8 @@ export class ConsumableListComponent implements OnInit, OnDestroy {
     this.loadConsumables();
     this.loadUnits();
 
-    // Escuta confirmações do modal para consumíveis
     this.subscription.add(
-      this.modalService.onConfirm().subscribe(item => {
+      this.modalService.onConfirm().subscribe((item: ModalActionItem) => {
         if (item.type === 'consumable') {
           this.deletar(item.nid);
         }
@@ -63,13 +59,12 @@ export class ConsumableListComponent implements OnInit, OnDestroy {
   }
 
   loadConsumables() {
-    this.consumableService.listar().subscribe({
-      next: (response: any) => {
-        this.consumables = response.items || response;
+    this.consumableService.listar(0, 20).subscribe({
+      next: (page: PageDTO<Consumable>) => {
+        this.consumables = page.items;
       },
-      error: (err) => {
-        console.error('Erro API:', err);
-        this.mensagemErro = 'Erro ao carregar consumíveis. Tente novamente.';
+      error: () => {
+        this.mensagemErro = 'Erro ao carregar consumíveis.';
         this.consumables = [];
         setTimeout(() => this.mensagemErro = '', 5000);
       }
@@ -77,11 +72,10 @@ export class ConsumableListComponent implements OnInit, OnDestroy {
   }
 
   loadUnits() {
-    this.utilsService.listarUnits().subscribe({
-      next: (data: any) => this.units = data.items || data,
+    this.utilsService.listarUnits(0, 100).subscribe({
+      next: (page: PageDTO<Unit>) => this.units = page.items,
       error: () => {
         this.mensagemErro = 'Erro ao carregar unidades.';
-        this.units = [];
         setTimeout(() => this.mensagemErro = '', 3000);
       }
     });
@@ -99,11 +93,16 @@ export class ConsumableListComponent implements OnInit, OnDestroy {
     this.formSubmitted = true;
     if (this.formGroup.valid) {
       this.carregandoForm = true;
-      this.mensagemErro = '';
-      const payload = {
-        ...this.formGroup.value,
-        tagNids: this.formGroup.value.tagNids ? this.formGroup.value.tagNids.split(',').map((id: string) => parseInt(id.trim())).filter((id: number) => !isNaN(id)) : []
+      const payload: ConsumableCreateDTO = {
+        name: this.formGroup.value.name,
+        description: this.formGroup.value.description,
+        quantity: +this.formGroup.value.quantity,
+        unitId: +this.formGroup.value.unitId,
+        tagIds: this.formGroup.value.tagIds
+          ? this.formGroup.value.tagIds.split(',').map((s: string) => parseInt(s.trim())).filter((n: any) => !isNaN(n))
+          : []
       };
+
       this.consumableService.criar(payload).subscribe({
         next: () => {
           this.mensagemSucesso = 'Consumível criado com sucesso!';
@@ -112,7 +111,6 @@ export class ConsumableListComponent implements OnInit, OnDestroy {
           setTimeout(() => this.mensagemSucesso = '', 3000);
         },
         error: (err) => {
-          console.error('Erro ao criar:', err);
           this.mensagemErro = err.error?.message || 'Erro ao criar consumível.';
           setTimeout(() => this.mensagemErro = '', 5000);
         },
@@ -121,24 +119,23 @@ export class ConsumableListComponent implements OnInit, OnDestroy {
     }
   }
 
-  confirmarDeletar(nid: number, tid: string) {
+  confirmarDeletar(id: number, name: string) {
     this.modalService.showConfirmation(
       'Excluir Consumível',
-      `Deseja realmente excluir o item "${tid}"?`,
-      { nid, tid, type: 'consumable' }
+      `Deseja realmente excluir "<strong>${name}</strong>"?`,
+      { nid: id, name, type: 'consumable' }
     );
   }
 
-  deletar(nid: number) {
-    this.consumableService.deletar(nid).subscribe({
+  deletar(id: number) {
+    this.consumableService.deletar(id).subscribe({
       next: () => {
-        this.mensagemSucesso = 'Consumível deletado com sucesso!';
+        this.mensagemSucesso = 'Consumível excluído!';
         this.loadConsumables();
         setTimeout(() => this.mensagemSucesso = '', 3000);
       },
-      error: (err) => {
-        console.error('Erro ao deletar:', err);
-        this.mensagemErro = err.error?.message || 'Erro ao deletar consumível.';
+      error: () => {
+        this.mensagemErro = 'Erro ao excluir consumível.';
         setTimeout(() => this.mensagemErro = '', 5000);
       }
     });
